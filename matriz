@@ -1,0 +1,751 @@
+#!/usr/bin/ruby
+
+class MatCell
+        @noLine
+        @noColumn
+        @value
+        @nextHorizCell
+        @nextVertCell
+
+        def noLine
+           @noLine
+        end
+
+        def noColumn
+           @noColumn
+        end
+
+        def value
+           @value
+        end
+
+        def nextHorizCell
+           @nextHorizCell
+        end
+
+        def nextVertCell
+           @nextVertCell
+        end
+        def nextHorizCell=(nextCell)
+           @nextHorizCell = nextCell
+        end
+
+        def nextVertCell=(nextCell)
+           @nextVertCell = nextCell
+        end
+
+    #-------------------------------------------------------------------|
+
+        def initialize (aLine, aCol, aValue)
+                @noLine = aLine
+                @noColumn = aCol
+                @value = aValue 
+                @nextHorizCell = nil 
+                @nextVertCell = nil
+        end
+
+end
+
+    # -------------------------------------------------------------------
+
+class LineOrColHeader
+
+        @noLineOrColumn
+        @nextHeader
+        @firstCell
+
+        #valor de primera celda
+            def firstCell
+                    @firstCell
+            end
+
+        #no existe la columna y se pasa al siguiente dato
+    def noLineOrColumn
+                return @noLineOrColumn
+    end
+
+        #siguiente encabezado
+    def nextHeader
+                return @nextHeader
+    end
+
+        #encabezado
+    def setNextHeader (aHeader)
+                @nextHeader = aHeader
+    end
+
+        def printVals
+
+                puts "LineOrColHeader " + @noLineOrColumn.to_s
+
+                if @nextHeader == nil
+                then
+                        puts "nextHeader: nil"
+                else
+                        puts "nextHeader: " + @nextHeader.to_s
+                end
+
+                if @firstCell == nil
+                then
+                        puts "firstCell: nil"
+                else
+                        puts "firstCell: " + @firstCell.to_s
+                end
+        end
+
+    def searchCell (line, column)
+                c = @firstCell
+                return c
+    end
+
+    def printCellList (isLine)
+
+    if isLine
+    then
+    print ("Line " + @noLineOrColumn.to_s + " Cell Head")
+    else
+    print ("Column " + @noLineOrColumn.to_s + " Cell Head")
+    end
+
+    _cell = @firstCell
+
+    while _cell != nil do
+    print (" \(" + _cell.noLine.to_s + "," + _cell.noColumn.to_s + "\)")
+    if isLine
+    then
+    _cell = _cell.nextHorizCell
+    else
+    _cell = _cell.nextVertCell
+    end
+    end
+    print "\n"
+
+    end
+
+    #-------------------------------------------------------------------|
+    # Metodo: "searchAndEventuallyInsertCellWithinHeaderList"           |
+    #-------------------------------------------------------------------|
+
+    def searchAndEventuallyInsertCellWithinHeaderList(isLine, insert, ofLine, ofColumn, withValue)
+                if @firstCell == nil
+                        if insert
+                                @firstCell = MatCell.new(ofLine, ofColumn, withValue)
+                                return @firstCell
+                        else
+                                return nil
+                        end
+                end
+                currentCell = @firstCell
+                previousCell = nil
+                while currentCell != nil do
+                        if(isLine && currentCell.noLine == ofLine && currentCell.noColumn == ofColumn) || (!isLine && currentCell.noColumn == ofLine && currentCell.noLine == ofColumn)
+                                return currentCell
+                        end
+                        condition = if isLine
+                                (currentCell.noColumn > ofColumn) || 
+                                (currentCell.noColumn == ofColumn && currentCell.noLine > ofLine)
+                        else
+                                (currentCell.noLine > ofLine) || 
+                                (currentCell.noLine == ofLine && currentCell.noColumn > ofColumn)
+                        end
+                        if condition && insert
+                                newCell = MatCell.new(ofLine, ofColumn, withValue)
+
+                                if previousCell == nil
+                                        newCell.nextHorizCell = @firstCell if isLine
+                                        newCell.nextVertCell = @firstCell if !isLine
+                                        @firstCell = newCell
+                                else
+                                        if isLine
+                                                newCell.nextHorizCell = currentCell
+                                                previousCell.nextHorizCell = newCell
+                                        else
+                                                newCell.nextVertCell = currentCell
+                                                previousCell.nextVertCell = newCell
+                                        end
+                                end
+                                return newCell
+                        end
+                        previousCell = currentCell
+                        currentCell = isLine ? currentCell.nextHorizCell :
+                        currentCell.nextVertCell
+                end
+
+                if insert
+                        newCell = MatCell.new(ofLine, ofColumn, withValue)
+                        if isLine
+                                previousCell.nextHorizCell = newCell
+                        else
+                                previousCell.nextVertCell = newCell
+                        end
+                end
+                nil
+    end
+
+
+    #-------------------------------------------------------------------|
+    # Metodo: "InsertCellWithinHeaderList"                              |
+    #-------------------------------------------------------------------|
+
+    def InsertCellWithinHeaderList (aCell, isLine)
+    if @firstCell.nil?
+    @firstCell = aCell
+    return
+    end
+
+    currentCell = @firstCell
+    previousCell = nil
+
+    while currentCell != nil do
+    if (isLine && currentCell.noColumn > aCell.noColumn) || (!isLine && currentCell.noLine > aCell.noLine)
+    if previousCell.nil?
+    aCell.nextHorizCell = @firstCell if isLine
+    aCell.nextVertCell = @firstCell unless isLine
+    @firstCell = aCell
+    else
+    aCell.nextHorizCell = currentCell if isLine
+    aCell.nextVertCell = currentCell unless isLine
+    previousCell.nextHorizCell = aCell if isLine
+    previousCell.nextVertCell = aCell unless isLine
+    end
+    return
+    end
+
+    previousCell = currentCell
+    currentCell = isLine ? currentCell.nextHorizCell : currentCell.nextVertCell
+    end
+
+    previousCell.nextHorizCell = aCell if isLine
+    previousCell.nextVertCell = aCell unless isLine
+    end
+
+    #-------------------------------------------------------------------|
+
+    def initialize (lineOrCol)
+
+    @noLineOrColumn = lineOrCol
+    @nextHeader = nil
+    @firstCell = nil
+
+    end
+
+    end
+
+    # -------------------------------------------------------------------
+
+    class Matriz
+
+    @nbrLines
+    @nbrColumns
+    @firstLineHeader
+    @firstColHeader
+
+    INIT_STATE = 1
+
+    MATRIZ_STATE = 2
+    LINES_STATE_1 = 3
+    NBR_LINES_STATE = 4
+    COLUMNS_STATE_1 = 5
+    END_COLS_LINES_STATE = 6
+
+    COLUMNS_STATE_2 = 7
+    NBR_COLUMNS_STATE = 8
+    LINES_STATE_2 = 9
+
+    CELLS_STATE = 10
+    NOLINE_STATE = 11
+    NOCOLUMN_STATE = 12
+    VALOR_STATE = 13
+
+    END_STATE = 14
+
+    def initialize (nbLines, nbCols)
+
+    @nbrLines = nbLines
+    @nbrColumns = nbCols
+    @firstLineHeader = nil
+    @firstColHeader = nil
+
+    end
+
+    def setDimensions (nbLines, nbCols)
+
+    @nbrLines = nbLines
+    @nbrColumns = nbCols
+
+    end
+
+    def printHeaderList (isLine)
+
+    if isLine
+    then
+    print ("Line List")
+    else
+    print ("Column List")
+    end
+
+    if isLine
+    then
+    _lineHeader = @firstLineHeader
+    else
+    _lineHeader = @firstColHeader
+    end
+
+    while _lineHeader != nil do
+    print (" " + _lineHeader.noLineOrColumn.to_s)
+    _lineHeader = _lineHeader.nextHeader
+    end
+    print "\n"
+
+    end
+
+    #-------------------------------------------------------------------|
+    #                                                                   |
+    # Metodo: "searchAndEventuallyInsertHeaderForLine"                  |
+    #                                                                   |
+    # Recuerdo importante:                                              |
+    # Ese metodo se aplica en un objeto destinario que es de la clase   |
+    # "Matriz"                                                          |
+    #                                                                   |
+    # isLine: Si su valor es true la busqueda y eventualmente la        |
+    #         insercion se hace en el campo "@firstLineHeader" del      |
+    #         objeto destinario =>> buscamos en la lista de las         |
+    #         encabezadas ("headers") de lineas.                        |
+    #         Si su valor es false se aplica en "@firstColHeader" =>    |
+    #         => buscamos en la lista de las encabezadas ("headers") de |
+    #         columnas.                                                 |
+    #                                                                   |
+    # aLineOrCol: numero de linea o de columna.                         |
+    #                                                                   |
+    # insert: Si su valor es true y en el caso que la busqueda no       |
+    #         encontra la encabezada correspondiente a la linea o la    |
+    #         columna "aLineOrCol", el metodo lo inserta en la lista.   |
+    #         Si su valor es false el metodo no hace nada mas.          |
+    #                                                                   |
+    #                                                                   |
+    #-------------------------------------------------------------------|
+
+    def searchAndEventuallyInsertHeaderForLine(isLine, aLineOrCol, insert)
+
+    if (isLine && (@firstLineHeader == nil)) || (!isLine && (@firstColHeader == nil))
+    then
+    if insert
+    then
+    if isLine
+    then
+    _before = @firstLineHeader = LineOrColHeader.new aLineOrCol
+    else
+    _before = @firstColHeader = LineOrColHeader.new aLineOrCol
+    end
+    return _before
+    else
+    return nil
+    end
+    else
+    _before = nil
+    if isLine
+    then
+    _header = @firstLineHeader
+    else
+    _header = @firstColHeader
+    end
+    while _header != nil do
+    if _header.noLineOrColumn == aLineOrCol
+    then
+    return _header
+    end
+    if _header.noLineOrColumn > aLineOrCol
+    then
+    if insert
+    then
+    _newHeader = LineOrColHeader.new aLineOrCol
+    if _before == nil
+    then
+    if isLine
+    then
+    @firstLineHeader = _newHeader
+    else
+    @firstColHeader = _newHeader
+    end
+    _newHeader.setNextHeader (_header)
+    else
+    _newHeader.setNextHeader (_header)
+    _before.setNextHeader (_newHeader)
+    end
+    return _newHeader
+    else
+    return nil
+    end
+    end
+    _before = _header
+    _header = _header.nextHeader
+    end
+    if insert
+    then
+    _newHeader = LineOrColHeader.new aLineOrCol
+    _before.setNextHeader (_newHeader)
+    return _newHeader
+    else
+    return nil
+    end
+    end
+    end
+
+    def setCellValue (aLine, aCol, aValue)
+    puts "<setCellValue> Line: #{aLine} Column: #{aCol} Value: #{aValue}"
+    # Mantener esta línea para depuración
+
+    # Busca o inserta el encabezado de la fila (aLine)
+    lineHeader = searchAndEventuallyInsertHeaderForLine(true, aLine, true)
+    # Busca o inserta el encabezado de la columna (aCol)
+    colHeader = searchAndEventuallyInsertHeaderForLine(false, aCol, true)
+
+    # Busca la celda en el encabezado de la fila
+    existingCell = lineHeader.searchAndEventuallyInsertCellWithinHeaderList(true, false, aLine, aCol, aValue)
+
+    # Si la celda ya existe, actualiza su valor
+    if existingCell
+    existingCell.value = aValue
+    else
+    # Si no existe, inserta una nueva celda
+            lineHeader.InsertCellWithinHeaderList(MatCell.new(aLine, aCol, aValue), true)
+            colHeader.InsertCellWithinHeaderList(MatCell.new(aLine, aCol, aValue), false)
+    end
+    end
+
+    def getCellValue(aLine, aCol)
+        lineHeader = searchAndEventuallyInsertHeaderForLine(true, aLine, false)
+        return 0.0 if lineHeader.nil?
+
+        currentCell = lineHeader.firstCell
+        while currentCell != nil do
+          if currentCell.noColumn == aCol
+            return currentCell.value  # Devolver el valor de la celda
+          end
+          currentCell = currentCell.nextHorizCell
+        end
+
+        0.0  # Si no se encuentra el valor, devolver 0.0
+      end
+
+    #-------------------------------------------------------------------|
+    #-------------------------------------------------------------------|
+
+    def printAllCellValues
+    puts "Valores de las celdas de la matriz:"
+    (1..@nbrLines).each do |line|
+    (1..@nbrColumns).each do |col|
+    value = getCellValue(line, col)
+    puts "<getCellValue> Line: #{line} Column: #{col} Value: #{sprintf('%.1f', value)}"
+    end
+    end
+    end
+
+    def createMatrizFromFile(fromFileName)
+        _fromFile = MyFile.new(fromFileName, "r")
+        _fromFile.initRead
+        _aWord = _fromFile.getWord
+
+        state = INIT_STATE
+        _line = nil
+        _col = nil
+        _v = nil
+
+        while _aWord != "" do
+                case state
+                        when INIT_STATE
+                                if _aWord == "Matriz"
+                                        state = MATRIZ_STATE
+                                end
+                        when MATRIZ_STATE
+                                if _aWord == "lines"
+                                        state = LINES_STATE_1
+                                end
+                        when LINES_STATE_1
+                                _lineString = _aWord.scan(/-?\d+/).join  # Permitir números negativos
+                                if _lineString == _aWord
+                                        _line = _aWord.to_i
+                                        state = NBR_LINES_STATE
+                                end
+                        when NBR_LINES_STATE
+                                if _aWord == "columns"
+                                        state = COLUMNS_STATE_1
+                                end
+                        when COLUMNS_STATE_1
+                                _colString = _aWord.scan(/-?\d+/).join  # Permitir números negativos
+                                if _colString == _aWord
+                                        _col = _aWord.to_i
+                                        setDimensions(_line, _col)
+                                        state = NBR_COLUMNS_STATE
+                                end
+                        when NBR_COLUMNS_STATE
+                                if _aWord == "end"
+                                        state = END_COLS_LINES_STATE
+                                end
+                        when END_COLS_LINES_STATE
+                                if _aWord == "cells"
+                                        state = CELLS_STATE
+                                end
+                        when CELLS_STATE
+                                _lineString = _aWord.scan(/-?\d+/).join  # Permitir números negativos
+                                if _lineString == _aWord
+                                        _line = _aWord.to_i
+                                        state = NOLINE_STATE
+                                end
+                        when NOLINE_STATE
+                                _colString = _aWord.scan(/-?\d+/).join  # Permitir números negativos
+                                if _colString == _aWord
+                                        _col = _aWord.to_i
+                                        state = NOCOLUMN_STATE
+                                end
+                        when NOCOLUMN_STATE
+                                _vstring = _aWord.scan(/-?\d*\.?\d+/).join  # Permitir números negativos y ceros
+                                if _vstring == _aWord
+                                        _v = _aWord.to_f
+                                        setCellValue(_line, _col, _v)
+                                        state = CELLS_STATE
+                                end
+                end
+                _aWord = _fromFile.getWord
+        end #fin del while
+        _fromFile.close
+        end #fin de la funcion
+
+end
+
+    # -------------------------------------------------------------------
+
+    class MyFile < File
+
+    @car
+    @curWord
+
+    def initRead
+
+    @car = self.readchar
+
+    end
+
+    def getWord
+
+    while ((@car == ?\s) or (@car == ?\t) or (@car == ?\n) or (@car == ?\f) or (@car == ?\r)) and (!self.eof) do
+    @car = self.readchar
+    end
+
+    @curWord=""
+
+    while ((@car != ?\s) and (@car != ?\t) and (@car != ?\n) and (@car != ?\f) and (@car != ?\r) and (!self.eof)) do
+    @curWord = @curWord + @car
+    @car = self.readchar
+    end
+
+    return @curWord
+
+    end
+
+    end
+
+    # -------------------------------------------------------------------
+
+    class MatrizAppli
+
+    def start
+
+    h = LineOrColHeader.new(4)
+    puts ("first:")
+    if h.is_a? LineOrColHeader
+    then
+    h.printVals
+    end
+
+    m = Matriz.new(8,4)
+
+    h = m.searchAndEventuallyInsertHeaderForLine(true,2,false)
+    if h.is_a? LineOrColHeader
+    then
+    h.printVals
+    end
+
+    h = m.searchAndEventuallyInsertHeaderForLine(true,5,true)
+    m.printHeaderList true
+
+    h = m.searchAndEventuallyInsertHeaderForLine(true,1,true)
+    m.printHeaderList true
+
+    h = m.searchAndEventuallyInsertHeaderForLine(true,4,true)
+    m.printHeaderList true
+
+    h = m.searchAndEventuallyInsertHeaderForLine(true,2,true)
+    m.printHeaderList true
+
+    h = m.searchAndEventuallyInsertHeaderForLine(true,8,true)
+    m.printHeaderList true
+
+    h = m.searchAndEventuallyInsertHeaderForLine(true,13,true)
+    m.printHeaderList true
+
+    h = m.searchAndEventuallyInsertHeaderForLine(true,0,true)
+    m.printHeaderList true
+
+    h = m.searchAndEventuallyInsertHeaderForLine(true,7,true)
+    m.printHeaderList true
+
+    h = m.searchAndEventuallyInsertHeaderForLine(true,7,true)
+    m.printHeaderList true
+
+
+    h = m.searchAndEventuallyInsertHeaderForLine(true,8,false)
+    if h == nil
+    then
+    puts "No existe header para line 8"
+    else
+    puts "Existe header para line 8"
+    end
+
+    h = m.searchAndEventuallyInsertHeaderForLine(true,3,false)
+    if h == nil
+    then
+    puts "No existe header para line 3"
+    else
+    puts "Existe header para line 3"
+    end
+
+    ####################################################################
+
+    h = m.searchAndEventuallyInsertHeaderForLine(false,2,false)
+    if h.is_a? LineOrColHeader
+    then
+    h.printVals
+    end
+
+    h = m.searchAndEventuallyInsertHeaderForLine(false,5,true)
+    m.printHeaderList false
+
+    h = m.searchAndEventuallyInsertHeaderForLine(false,1,true)
+    m.printHeaderList false
+
+    h = m.searchAndEventuallyInsertHeaderForLine(false,44,true)
+    m.printHeaderList false
+
+    h = m.searchAndEventuallyInsertHeaderForLine(false,42,true)
+    m.printHeaderList false
+
+    h = m.searchAndEventuallyInsertHeaderForLine(false,8,true)
+    m.printHeaderList false
+
+    h = m.searchAndEventuallyInsertHeaderForLine(false,113,true)
+    m.printHeaderList false
+
+    h = m.searchAndEventuallyInsertHeaderForLine(false,0,true)
+    m.printHeaderList false
+
+    h = m.searchAndEventuallyInsertHeaderForLine(false,7,true)
+    m.printHeaderList false
+
+    h = m.searchAndEventuallyInsertHeaderForLine(false,7,true)
+    m.printHeaderList false
+
+    h = m.searchAndEventuallyInsertHeaderForLine(false,8,false)
+
+
+    if h == nil
+    then
+    puts "No existe header para Col 8"
+    else
+    puts "Existe header para Col 8"
+    end
+
+    h = m.searchAndEventuallyInsertHeaderForLine(false,3,false)
+    if h == nil
+    then
+    puts "No existe header para Col 3"
+    else
+    puts "Existe header para lCol 3"
+    end
+
+        #h1----------------
+
+    h1 = LineOrColHeader.new(7)
+    print "\nbegin h1\n"
+    c = h1.searchAndEventuallyInsertCellWithinHeaderList(true,true,7,4,128)
+    h1.printCellList true
+    c = h1.searchAndEventuallyInsertCellWithinHeaderList(true,false,2,4,42)
+    h1.printCellList true
+    c = h1.searchAndEventuallyInsertCellWithinHeaderList(false,false,2,7,42)
+    h1.printCellList true
+    print "\nend h1\n"
+
+    #h2-----------------------------
+
+    h2 = LineOrColHeader.new(4)
+    print "\nbegin h2\n"
+    c = h2.searchAndEventuallyInsertCellWithinHeaderList(false,true,7,4,128)
+    h2.printCellList false
+    c = h2.searchAndEventuallyInsertCellWithinHeaderList(false,true,2,4,42)
+    h2.printCellList false
+    c = h2.searchAndEventuallyInsertCellWithinHeaderList(false,true,2,7,42)
+    h2.printCellList false
+    c = h2.searchAndEventuallyInsertCellWithinHeaderList(false,true,3,4,127)
+    h2.printCellList false
+    c = h2.searchAndEventuallyInsertCellWithinHeaderList(false,true,1,4,127)
+    h2.printCellList false
+       print "\nend h2\n"
+
+#h3 -------------------------------------
+
+#        h3 = LineOrColHeader.new(2)
+#        print "\nbegin h3\n"
+#        c = h3.searchAndEventuallyInsertCellWithinHeaderList(true,true,2,4,42)
+#     h3.printCellList true
+#     c = h3.searchAndEventuallyInsertCellWithinHeaderList(true,true,2,4,127)
+#        h3.printCellList true
+#     c = h3.searchAndEventuallyInsertCellWithinHeaderList(true,true,2,9,27)
+#        h3.printCellList true
+#     c = h3.searchAndEventuallyInsertCellWithinHeaderList(true,true,2,8,67)
+#        h3.printCellList true
+#     c = h3.searchAndEventuallyInsertCellWithinHeaderList(true,true,2,8,129)
+#        h3.printCellList true
+#        print "\nend h3\n"
+
+    print "\nMatriz: matriz1\n"
+
+    m1 = Matriz.new(0,0)
+    m1.createMatrizFromFile("matriz1.txt")
+
+    print "\nMatriz: matriz2\n"
+
+    m2 = Matriz.new(0,0)
+    m2.createMatrizFromFile("matriz2.txt")
+
+    print "\nValores de las celdas la matriz: matriz 1\n"
+    m1.printAllCellValues
+    m1.getCellValue(1,1)
+    m1.getCellValue(1,2)
+    m1.getCellValue(1,3)
+    m1.getCellValue(2,1)
+    m1.getCellValue(2,2)
+    m1.getCellValue(2,3)
+    m1.getCellValue(3,1)
+    m1.getCellValue(3,2)
+    m1.getCellValue(3,3)
+
+    print "\nValores de las celdas la matriz: matriz 2\n"
+    m2.printAllCellValues
+    m2.getCellValue(1,1)
+    m2.getCellValue(1,2)
+    m2.getCellValue(1,3)
+    m2.getCellValue(2,1)
+    m2.getCellValue(2,2)
+    m2.getCellValue(2,3)
+    m2.getCellValue(3,1)
+    m2.getCellValue(3,2)
+    m2.getCellValue(3,3)
+
+    end
+
+    end
+
+    #***************************
+
+    ma = MatrizAppli.new
+    ma.start
